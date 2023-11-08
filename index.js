@@ -30,12 +30,29 @@ const client = new MongoClient(uri, {
   }
 });
 
+//middle ware
+const verifyToken = async(req,res,next)=>{
+  const token = req.cookies?.token;
+  console.log('first', token)
+  if(!token){
+    return res.status(401).send({message: 'not authorized'})
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+    if(err){
+      return res.status(401).send({message: 'not authorized'})
+    }
+    req.user = decoded;
+    next()
+  })
+}
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
     const allJobsCollection = client.db('stackJobsDB').collection('allJobs')
+    const applyJobsCollection = client.db('appliedJobsDB').collection('applyJob')
 
     // auth related api
     app.post('/jwt', async (req, res) => {
@@ -59,9 +76,18 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/myJobs', async (req, res) => {
+    app.get('/appliesJob', async (req, res) => {
+      const cursor = applyJobsCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+
+    app.get('/myJobs',verifyToken, async (req, res) => {
       console.log(req.query.email)
-      
+      // console.log(req.cookies)
+      if(req.query.email !== req.user.email){
+        return 
+      }
       let query = {};
       if (req.query?.email) {
         query = { userEmail: req.query.email }
@@ -70,10 +96,32 @@ async function run() {
       res.send(result)
     })
 
-    app.delete('/allJobs/:id', async (req, res) => {
+    app.delete('/myJobs/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await allJobsCollection.deleteOne(query)
+      res.send(result)
+    })
+
+    app.put('/myJobUpdate/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const option = { upsert: true }
+      const updateCard = req.body
+      const card = {
+
+        $set: {
+          name: updateCard.name,
+          jobTitle: updateCard.jobTitle,
+          salary: updateCard.salary,
+          photo: updateCard.photo,
+          category: updateCard.category,
+          postDate: updateCard.postDate,
+          deadline: updateCard.deadline,
+          description: updateCard.description
+        }
+      }
+      const result = await allJobsCollection.updateOne(filter, card, option)
       res.send(result)
     })
 
@@ -83,6 +131,13 @@ async function run() {
       const result = await allJobsCollection.insertOne(newJob)
       res.send(result)
     })
+
+    app.post('/appliesJob', async (req, res) => {
+      const newJob = req.body;
+      const result = await applyJobsCollection.insertOne(newJob)
+      res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
