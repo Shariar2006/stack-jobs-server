@@ -76,9 +76,17 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/appliesJob', async (req, res) => {
-      const cursor = applyJobsCollection.find()
-      const result = await cursor.toArray()
+    app.get('/appliesJob',verifyToken, async (req, res) => {
+      console.log(req.query?.email)
+      if(req.query.email !== req.user.email){
+        return 
+      }
+      let query = {};
+      console.log(query)
+      if (req.query?.email) {
+        query = { email: req.query.email }
+      }
+      const result = await applyJobsCollection.find().toArray()
       res.send(result)
     })
 
