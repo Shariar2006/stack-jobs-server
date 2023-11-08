@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 //middleware 
 app.use(cors());
@@ -30,6 +30,18 @@ async function run() {
     await client.connect();
 
     const allJobsCollection = client.db('stackJobsDB').collection('allJobs')
+
+
+    app.get('/allJobs', async(req, res)=>{
+      const cursor = allJobsCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+    app.get('/myJobs', async(req, res)=>{
+      const cursor = allJobsCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
 
 
     app.post('/addAJob', async(req,res)=>{
