@@ -9,7 +9,11 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 //middleware 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: [
+    'http://localhost:5173/',
+    'https://stack-jobs.web.app',
+    'https://stack-jobs.firebaseapp.com'
+  ],
   credentials: true
 }));
 app.use(express.json());
@@ -49,7 +53,7 @@ const verifyToken = async(req,res,next)=>{
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const allJobsCollection = client.db('stackJobsDB').collection('allJobs')
     const applyJobsCollection = client.db('appliedJobsDB').collection('applyJob')
@@ -62,8 +66,8 @@ async function run() {
       res
         .cookie('token', token, {
           httpOnly: true,
-          secure: false,
-          // sameSite: 'none'
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         })
         .send({ success: true })
     })
@@ -114,23 +118,23 @@ async function run() {
     app.put('/myJobUpdate/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
-      const option = { upsert: true }
-      const updateCard = req.body
-      const card = {
+      // const option = { upsert: true }
+      // const updateCard = req.body
+      // const card = {
 
-        $set: {
-          name: updateCard.name,
-          jobTitle: updateCard.jobTitle,
-          salary: updateCard.salary,
-          photo: updateCard.photo,
-          category: updateCard.category,
-          postDate: updateCard.postDate,
-          deadline: updateCard.deadline,
-          description: updateCard.description
-        }
-      }
-      const result = await allJobsCollection.updateOne(filter, card, option)
-      res.send(result)
+      //   $set: {
+      //     name: updateCard.name,
+      //     jobTitle: updateCard.jobTitle,
+      //     salary: updateCard.salary,
+      //     photo: updateCard.photo,
+      //     category: updateCard.category,
+      //     postDate: updateCard.postDate,
+      //     deadline: updateCard.deadline,
+      //     description: updateCard.description
+      //   }
+      // }
+      // const result = await allJobsCollection.updateOne(filter, card, option)
+      res.send(filter)
     })
 
 
@@ -147,7 +151,7 @@ async function run() {
     })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
