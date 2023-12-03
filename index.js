@@ -12,6 +12,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173/',
     'https://stack-jobs.web.app',
+    'https://thick-road.surge.sh',
     'https://stack-jobs.firebaseapp.com'
   ],
   credentials: true
